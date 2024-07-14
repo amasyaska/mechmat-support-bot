@@ -1,8 +1,10 @@
 import random
 import os
+import logging
 import telebot
 from dotenv import load_dotenv, dotenv_values
-import logging
+
+from Database import Database
 
 logging.basicConfig(filename="MechmatSupportBot.log", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
 
@@ -11,6 +13,7 @@ load_dotenv()
 random_emojis_list = "😇🤩😍😜🤯"
 API_KEY = os.getenv("API_KEY")
 bot = telebot.TeleBot(API_KEY)
+db = Database()
 
 options_list = ["Абітурієнту", "Студенту", "ОП ММФ", "Корисні посилання", "Інше", "Дати приймальної комісії", "Перелік документів для вступу", "Перелік документів для поселення", "Гайд по спеціальностям", "Тритон", "Кафедри", "Пошти викладачів", "Департаменти", "Президія", "Як доєднатися?", "Маю ідею!", "ТГК ОП ММФ", "ТГК ММФ", "Інста ММФ", "Фейсбук ММФ", "Сайт студміста", "Сайт ММФ", "Карта факультету", "Карта до столовки на фрексі 😎"]
 
@@ -22,6 +25,7 @@ def get_start_markup():
     markup.add(telebot.types.KeyboardButton("Корисні посилання"))
     markup.add(telebot.types.KeyboardButton("Інше"))
     markup.add(telebot.types.KeyboardButton("Показати мєм"))
+    markup.add(telebot.types.KeyboardButton("Підписатися на розсилку"))
     return markup
 
 def get_abit_markup():
@@ -78,6 +82,11 @@ def start_message(message):
     bot.reply_to(message,
                  f"Привіт! Це бот-помічник з механіко-математичного факультету КНУ {random_emojis_list[random.randint(0, len(random_emojis_list) - 1)]}. Тут ти можеш поставити питання або запропонувати ідею для покращення роботи факультету.",
                  reply_markup=get_start_markup())
+
+def send_delivery_for_all_users(message):
+    delivery_chat_id_list = db.get_delivery_chat_id_list()
+    for chat_id in delivery_chat_id_list:
+        bot.send_message(chat_id, message)
     
 @bot.message_handler(func=lambda message: True)
 def universal_message(message):
@@ -94,6 +103,9 @@ def universal_message(message):
             bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_other_markup())
         elif (message.text == "Показати мєм"):
             bot.send_photo(message.chat.id, photo=open('mem.jpg', 'rb'), reply_markup=get_start_markup())
+        elif (message.text == "Підписатися на розсилку"):
+            db.subscribe_user_delivery_by_chat_id(message.chat.id)
+            bot.send_message(message.chat.id, "Готово! Тепер ви підписані на розсилку.", reply_markup=get_start_markup())
         elif (message.text in options_list):
             bot.send_message(message.chat.id, "*Цей розділ в розробці*", reply_markup=get_back_markup())
         elif (message.text == "Назад"):
