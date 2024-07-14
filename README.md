@@ -2,6 +2,10 @@
 Mechmat Support Bot using pyTelegramBotAPI
 ## launch
 1. ```
+   git clone https://github.com/amasyaska/mechmat-support-bot.git
+   cd mechmat-support-bot
+   ```
+2. ```
    pip install -r requirements.txt
    ```
 3. create ```.env``` file in project directory
