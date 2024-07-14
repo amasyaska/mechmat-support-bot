@@ -2,6 +2,9 @@ import random
 import os
 import telebot
 from dotenv import load_dotenv, dotenv_values
+import logging
+
+logging.basicConfig(filename="MechmatSupportBot.log", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
 
 load_dotenv()
 
@@ -79,29 +82,28 @@ def start_message(message):
 @bot.message_handler(func=lambda message: True)
 def universal_message(message):
     try:
-        print(message.text)
+        if (message.text == "Абітурієнту"):
+            bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_abit_markup())
+        elif (message.text == "Студенту"):
+            bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_student_markup())
+        elif (message.text == "ОП ММФ"):
+            bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_op_markup())
+        elif (message.text == "Корисні посилання"):
+            bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_links_markup())
+        elif (message.text == "Інше"):
+            bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_other_markup())
+        elif (message.text == "Показати мєм"):
+            bot.send_photo(message.chat.id, photo=open('mem.jpg', 'rb'), reply_markup=get_start_markup())
+        elif (message.text in options_list):
+            bot.send_message(message.chat.id, "*Цей розділ в розробці*", reply_markup=get_back_markup())
+        elif (message.text == "Назад"):
+            bot.send_message(message.chat.id,
+                    f"Привіт! Це бот-помічник з механіко-математичного факультету КНУ {random_emojis_list[random.randint(0, len(random_emojis_list) - 1)]}. Тут ти можеш поставити питання або запропонувати ідею для покращення роботи факультету.",
+                    reply_markup=get_start_markup())
+        else:
+            bot.send_message(message.chat.id, "Я не зрозумів Вас. Введіть /start для початку роботи.")
     except Exception as ex:
-        print(f"{ex} happened...")
-    if (message.text == "Абітурієнту"):
-        bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_abit_markup())
-    elif (message.text == "Студенту"):
-        bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_student_markup())
-    elif (message.text == "ОП ММФ"):
-        bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_op_markup())
-    elif (message.text == "Корисні посилання"):
-        bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_links_markup())
-    elif (message.text == "Інше"):
-        bot.send_message(message.chat.id, "Що саме Вас цікавить?", reply_markup=get_other_markup())
-    elif (message.text == "Показати мєм"):
-        bot.send_photo(message.chat.id, photo=open('mem.jpg', 'rb'), reply_markup=get_start_markup())
-    elif (message.text in options_list):
-        bot.send_message(message.chat.id, "*Цей розділ в розробці*", reply_markup=get_back_markup())
-    elif (message.text == "Назад"):
-        bot.send_message(message.chat.id,
-                f"Привіт! Це бот-помічник з механіко-математичного факультету КНУ {random_emojis_list[random.randint(0, len(random_emojis_list) - 1)]}. Тут ти можеш поставити питання або запропонувати ідею для покращення роботи факультету.",
-                 reply_markup=get_start_markup())
-    else:
-        bot.send_message(message.chat.id, "Я не зрозумів Вас. Введіть /start для початку роботи.")
+        logging.critical(f"{ex} happened...")
 
 if __name__ == "__main__":
     bot.infinity_polling()
