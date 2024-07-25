@@ -32,7 +32,7 @@ def get_back_markup():
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    if (db.is_authorized_chat_id(message.chat.id)):
+    if (db.is_admin_by_chat_id(message.chat.id)):
         bot.reply_to(message,
                      f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Ви авторизовані для адміністрування.",
                     reply_markup=get_authorized_markup())
@@ -40,6 +40,37 @@ def start_message(message):
         bot.reply_to(message,
                      f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Вам треба авторизуватися для адміністрування.",
                     reply_markup=get_unauthorized_markup())
+        
+@bot.message_handler(commands=['create_one_time_password'])
+def start_message(message):
+    if (db.is_superadmin_by_chat_id(message.chat.id)):
+        one_time_password = message.text.split()[1]
+        db.create_one_time_password(message.chat.id, one_time_password)
+        bot.reply_to(message, f"Одноразовий пароль був успішно створений. Ви можете використати його для того, щоб додати адміністратора. Адміністратор має ввести команду \"/password {one_time_password}\"",
+                    reply_markup=get_authorized_markup())
+    else:
+        bot.reply_to(message,
+                     f"Вам треба авторизуватися для адміністрування",
+                    reply_markup=get_unauthorized_markup())
+        
+
+@bot.message_handler(commands=['password'])
+def start_message(message):
+    one_time_password = message.text.split()[1]
+    if (db.is_admin_by_chat_id(message.chat.id)):
+        bot.reply_to(message, f"Ви вже авторизовані для адміністрування",
+                    reply_markup=get_authorized_markup())
+    elif (db.is_one_time_password(one_time_password)):
+        db.add_admin_by_chat_id(message.chat.id)
+        db.delete_one_time_password(one_time_password)
+        bot.reply_to(message,
+                     f"Готово! Тепер ви авторизовані для адміністрування",
+                     reply_markup=get_authorized_markup())
+    else:
+        bot.reply_to(message,
+                     f"Вам треба авторизуватися для адміністрування",
+                    reply_markup=get_unauthorized_markup())
+
 
 def send_delivery_for_all_users(message):
     delivery_chat_id_list = db.get_delivery_chat_id_list()
@@ -49,18 +80,9 @@ def send_delivery_for_all_users(message):
 @bot.message_handler(func=lambda message: True)
 def universal_message(message):
     #try:
-    if (db.is_authorized_chat_id(message.chat.id)):
-        if (db.is_admin_delivering_by_chat_id(message.chat.id)):
-            send_delivery_for_all_users(message.text)
-            db.unset_admin_to_delivering_by_chat_id(message.chat.id)
-        elif (message.text == "Відправити повідомлення для розсилки"):
-            db.set_admin_to_delivering_by_chat_id(message.chat.id)
-            bot.send_message(message.chat.id, "Введіть повідомлення для відправки")
-        else:
-            bot.send_message(message.chat.id, "Я не зрозумів Вашу команду.")
-    elif (message.text == "сєкрєтний пароль 1337"):
-        db.add_admin_by_chat_id(message.chat.id)
-        bot.send_message(message.chat.id, "Пентагон взломан, ви авторизовані", reply_markup=get_authorized_markup())
+    if (db.is_admin_by_chat_id(message.chat.id)):
+        bot.send_message(message.chat.id, f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Ви авторизовані для адміністрування.",
+                       reply_markup=get_authorized_markup())
     else:
         bot.send_message(message.chat.id, "Вам треба авторизуватися для адміністрування", reply_markup=get_unauthorized_markup())
     #except Exception as ex:
