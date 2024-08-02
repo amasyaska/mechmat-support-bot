@@ -11,24 +11,15 @@ DB_HOST = os.getenv("DB_HOST");
 DB_USER = os.getenv("DB_USER");
 DB_PASSWORD = os.getenv("DB_PASSWORD");
 DB_PORT = os.getenv("DB_PORT");
-
+DATABASE_URL = os.getenv("DATABASE_URL");
 
 class Database:
     """
     Database to store bot users ID's in order to keep them updated with delivery
     """
-    def __init__(self: Database, db_name: str=DB_NAME, db_host=DB_HOST, db_user=DB_USER, db_password=DB_PASSWORD, db_port=DB_PORT) -> None:
-        self.db_name = db_name
-        self.db_host = db_host
-        self.db_user = db_user
-        self.db_password = db_password
-        self.db_port = db_port
-
-        self.db_connection = psycopg2.connect(database=self.db_name,
-                                                host=self.db_host,
-                                                user=self.db_user,
-                                                password=self.db_password,
-                                                port=self.db_port)
+    def __init__(self: Database, db_url: str=DATABASE_URL) -> None:
+        self.db_url = db_url
+        self.db_connection = psycopg2.connect(db_url, sslmode='require')
         self.db_cursor = self.db_connection.cursor()
         # creating tables in database if they are not existent
         self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS mechmatsupportbotuser(
