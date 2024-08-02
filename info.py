@@ -82,7 +82,9 @@ tg: @petryshka_li
 tg: @margemone"""
 
 dates_of_the_admissions_committee = """Дати приймальної комісії:
+
 Триває 05.08-08.08
+
 05.08: 9:00-17:00
 06.08: 9:00-17:00
 07.07: 9:00-17:00
@@ -97,3 +99,68 @@ library_info = """Бібліотечний абонемент працює з 9:
 Графік провітрювання:
 з 11:00 до 11:15
 з 16:00 до 16:15"""
+
+mmf_facebook_url = "https://www.facebook.com/mechmatKNU"
+
+mmf_instagram_url = "https://www.instagram.com/mechmatknu?igsh=MTd4bTFjdHFkazZubw=="
+
+mmf_tg_channel = "https://t.me/mm_knu"
+
+mmf_op_tg_channel = "https://t.me/spmmf"
+
+mmf_youtube = "https://www.youtube.com/channel/UCX4ENjo3GePeY5BV7htQVog"
+
+mmf_tg_abit_chat = "https://t.me/abit_mmf_2024"
+
+mmf_url = "https://mechmat.knu.ua/"
+
+studmisto_url = "https://studmisto.knu.ua/"
+
+main_page_button_text = "На головну ↩️"
+
+tg_channel_matematika_dlya_ienota_html = "<a href='https://t.me/matematiki_enota'>математика для єнота</a>"
+
+tg_channel_sixy_prime_html= "<a href='https://t.me/sixy_prime'>М[ζММ[ξ|ζ]]</a>"
+
+documenty_dlya_vstupu = """НЕОБХІДНИЙ ПЕРЕЛІК ДОКУМЕНТІВ ДЛЯ ВСТУПУ
+
+1. Паспорт
+документ, що посвідчує особу + копія
+
+2. РНОКПП + копія
+
+3. 4 фотокартки 3*4
+
+4. Заява, роздрукована з ЄДЕБО
+
+5. Результати НМТ/ЗНО
+
+6. Довідка з демографічного реєстру
+рекомендується отримати у Дія.
+
+7. Військово-обліковий документ
+для військовозобов'язаних - військовий квиток або тимчасове посвідчення військовозобов'язаного
+
+8. Право на пільги
+
+9. Папка-швидкосшивач
+для формування особової справи вступника
+
+‼️ КОПІЇ ДОКУМЕНТІВ БЕЗ НАДАННЯ ОРИГІНАЛІВ НЕ ПРИЙМАЮТЬСЯ‼️"""
+
+documenty_dlya_poselennya = """НЕОБХІДНИЙ ПЕРЕЛІК ДОКУМЕНТІВ ДЛЯ ПОСЕЛЕННЯ
+
+1. Скан документів, що підтверджують наявність пільг (за наявності)
+
+2. Скан паспорту
+1) Паспорт старого зразка 1, 2 та 11 сторінки
+2) ID-картка: 1 та 2 сторони
+
+3. Скан довідки з місця реєстрації (форма №13)
+Згенерована в Дія - для ID-картки
+
+4. Скан РНОКПП
+
+5. Фото, в електронному вигляді
+
+<a href='https://studmisto.knu.ua/'>Сайт студміста</a>"""
