@@ -1,4 +1,5 @@
 import threading
+import time
 
 import MechmatSupportBot
 
@@ -6,15 +7,14 @@ import MechmatSupportAdministratorBot
 
 MechmatSupportAdministratorBot.bot_sender = MechmatSupportBot.bot
 
-mechmatsupportbot_thread = threading.Thread(target=MechmatSupportBot.main)
-delivery_thread = threading.Thread(target=MechmatSupportBot.send_delivery_for_all_users_interface)
-mechmatsupportadminbot_thread = threading.Thread(target=MechmatSupportAdministratorBot.main)
+mechmatsupportbot_thread = threading.Thread(target=MechmatSupportBot.main, daemon=True)
+mechmatsupportadminbot_thread = threading.Thread(target=MechmatSupportAdministratorBot.main, daemon=True)
 
 if __name__ == "__main__":
     mechmatsupportadminbot_thread.start()
+    print(f'MechmatSupportAdministratorBot.main has been started')
     mechmatsupportbot_thread.start()
-    delivery_thread.start()
+    print(f'MechmatSupportBot.main has been started')
 
-    mechmatsupportadminbot_thread.join()
-    mechmatsupportbot_thread.join()
-    delivery_thread.join()
+    while (mechmatsupportbot_thread.is_alive() and mechmatsupportadminbot_thread.is_alive()):
+        time.sleep(0)
