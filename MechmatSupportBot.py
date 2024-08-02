@@ -53,7 +53,7 @@ def callback_query(call):
         bot.send_message(call.message.chat.id, info.tg_channel_matematika_dlya_ienota_html, parse_mode="HTML")
         bot.send_message(call.message.chat.id, info.tg_channel_sixy_prime_html, parse_mode="HTML", reply_markup=get_back_markup())
     elif (call.data == "Підписатися на розсилку"):
-        db.set_user_delivery_by_chat_id(call.message.chat.id, 1)
+        db.set_user_delivery_by_chat_id(call.message.chat.id, True)
         bot.send_message(call.message.chat.id, "Ви підписані на розсилку, перевірити статус: /check_delivery")
 
     # Абітурієнту
@@ -209,7 +209,7 @@ def universal_message(message):
     if (not db.is_user_exists_by_chat_id(message.chat.id)):
         db.add_user_by_chat_id(message.chat.id)
     try:
-        bot.send_message(message.chat.id, "Я не зрозумів Вас. Введіть /start для початку роботи.")
+        bot.send_message(message.chat.id, "Я не зрозумів Вас. Введіть /start для початку роботи.", reply_markup=get_back_markup())
     except Exception as ex:
         logging.critical(f"{ex} happened...")
 
