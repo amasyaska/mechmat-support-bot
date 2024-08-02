@@ -65,12 +65,19 @@ def callback_query(call):
     elif (call.data == "Перелік документів для поселення"):
         bot.send_message(call.message.chat.id, info.documenty_dlya_poselennya, parse_mode="HTML", reply_markup=get_back_markup())
         # bot.send_photo(call.message.chat.id, photo=open('resources/poselennya_docs.png', 'rb'), reply_markup=get_back_markup())
+    elif (call.data == "Гайд по спеціальностям"):
+        bot.send_message(call.message.chat.id, info.speciality_guide, reply_markup=get_speciality_guide_markup())
+        # bot.send_photo(call.message.chat.id, photo=open('resources/poselennya_docs.png', 'rb'), reply_markup=get_back_markup())
 
     # ОП ММФ
     elif (call.data == "Департаменти"):
         bot.send_message(call.message.chat.id, "Що саме Вас цікавить?", reply_markup=get_department_markup())
     elif (call.data == "Президія"):
         bot.send_message(call.message.chat.id, info.presidium, reply_markup=get_back_markup())
+    elif (call.data == "Як доєднатися?"):
+        bot.send_message(call.message.chat.id, info.how_to_join, reply_markup=get_back_markup())
+    elif (call.data == "Маю ідею!"):
+        bot.send_message(call.message.chat.id, info.have_an_idea, reply_markup=get_idea_markup())
 
     # ОП ММФ -> Департаменти
     elif (call.data == "Культурно-мистецький"):
@@ -127,7 +134,7 @@ def get_op_markup():
         [telebot.types.InlineKeyboardButton("Департаменти 🏬", callback_data="Департаменти"),
          telebot.types.InlineKeyboardButton("Президія 💼", callback_data="Президія")],
         [telebot.types.InlineKeyboardButton("Як доєднатися?", callback_data="Як доєднатися?")],
-        [telebot.types.InlineKeyboardButton("Маю ідею! 💡", callback_data="Маю ідею!?")],
+        [telebot.types.InlineKeyboardButton("Маю ідею! 💡", callback_data="Маю ідею!")],
         [telebot.types.InlineKeyboardButton(info.main_page_button_text, callback_data=info.main_page_button_text)]
     ]
     markup = telebot.types.InlineKeyboardMarkup(keyboard)
@@ -170,6 +177,25 @@ def get_other_markup():
     ]
     markup = telebot.types.InlineKeyboardMarkup(keyboard)
     return markup
+
+def get_speciality_guide_markup():
+    keyboard = [
+        [telebot.types.InlineKeyboardButton("Математика", url=info.math_guide_url)],
+        [telebot.types.InlineKeyboardButton("Комп'ютерна математика", url=info.compmath_guide_url)],
+        [telebot.types.InlineKeyboardButton("Статистика", url=info.statistics_guide_url)],
+        [telebot.types.InlineKeyboardButton("Середня освіта", url=info.osvita_guide_url)],
+        [telebot.types.InlineKeyboardButton(info.main_page_button_text, callback_data=info.main_page_button_text)]
+    ]
+    markup = telebot.types.InlineKeyboardMarkup(keyboard)
+    return markup
+
+def get_idea_markup():
+    keyboard = [
+        [telebot.types.InlineKeyboardButton("Президія 💼", callback_data="Президія")],
+        [telebot.types.InlineKeyboardButton(info.main_page_button_text, callback_data=info.main_page_button_text)]
+    ]
+    markup = telebot.types.InlineKeyboardMarkup(keyboard)
+    return markup    
 
 def get_back_markup():
     keyboard = [
