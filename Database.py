@@ -1,133 +1,149 @@
 from __future__ import annotations
-import sqlite3
+import os
+import psycopg2
+
+from dotenv import load_dotenv, dotenv_values
+
+load_dotenv()
+
+DB_NAME = os.getenv("DB_NAME");
+DB_HOST = os.getenv("DB_HOST");
+DB_USER = os.getenv("DB_USER");
+DB_PASSWORD = os.getenv("DB_PASSWORD");
+DB_PORT = os.getenv("DB_PORT");
+
 
 class Database:
     """
     Database to store bot users ID's in order to keep them updated with delivery
     """
-    def __init__(self: Database, filename: str="database.db") -> None:
-        self.db_filename = filename
-        self.db_connection = sqlite3.connect(self.db_filename, check_same_thread=False)
+    def __init__(self: Database, db_name: str=DB_NAME, db_host=DB_HOST, db_user=DB_USER, db_password=DB_PASSWORD, db_port=DB_PORT) -> None:
+        self.db_name = db_name
+        self.db_host = db_host
+        self.db_user = db_user
+        self.db_password = db_password
+        self.db_port = db_port
+
+        self.db_connection = psycopg2.connect(database=self.db_name,
+                                                host=self.db_host,
+                                                user=self.db_user,
+                                                password=self.db_password,
+                                                port=self.db_port)
         self.db_cursor = self.db_connection.cursor()
         # creating tables in database if they are not existent
-        self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS User(
+        self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS mechmatsupportbotuser(
                                     chat_id INT PRIMARY KEY,
                                     state INT,
-                                    delivery INT
+                                    delivery BOOLEAN
                                );''')
-        self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS Admin(
+        self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS admin(
                                     chat_id INT PRIMARY KEY,
                                     state INT,
-                                    is_superadmin INT
+                                    is_superadmin BOOLEAN
                                );''')
-        self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS OneTimePassword(
+        self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS onetimepassword(
                                     admin_chat_id INT,
-                                    password CHAR
+                                    password TEXT
                                );''')
         self.db_connection.commit()
 
     # USER
 
-    def set_user_delivery_by_chat_id(self: Database, chat_id: int, delivery: int) -> None:
-        self.db_cursor.execute(f'''UPDATE User
+    def set_user_delivery_by_chat_id(self: Database, chat_id: int, delivery: bool) -> None:
+        self.db_cursor.execute(f'''UPDATE mechmatsupportbotuser
                                     SET delivery={delivery}
                                     WHERE chat_id={chat_id}''')
         self.db_connection.commit()
 
     def add_user_by_chat_id(self: Database, chat_id: int) -> None:
-        self.db_cursor.execute(f'''INSERT INTO User(chat_id, state, delivery)
+        self.db_cursor.execute(f'''INSERT INTO mechmatsupportbotuser(chat_id, state, delivery)
                                     VALUES
-                                    ({chat_id}, 0, FALSE)
-                                    ON CONFLICT(chat_id) DO UPDATE
-                                     SET state=0, delivery=FALSE
-                                     WHERE chat_id={chat_id};''')
+                                    ({chat_id}, 0, FALSE);''')
         self.db_connection.commit()
 
     def is_user_exists_by_chat_id(self: Database, chat_id: int) -> bool:
-        return (len(self.db_cursor.execute(f'''SELECT *
-                                            FROM User
+        self.db_cursor.execute(f'''SELECT *
+                                            FROM mechmatsupportbotuser
                                             WHERE chat_id={chat_id};
-                                            ''').fetchall()) > 0)
+                                            ''')
+        return (len(self.db_cursor.fetchall()) > 0)
 
     def set_user_state_by_chat_id(self: Database, chat_id: int, state: int) -> None:
-        self.db_cursor.execute(f'''UPDATE User
+        self.db_cursor.execute(f'''UPDATE mechmatsupportbotuser
                                     SET state={state}
                                     WHERE chat_id={chat_id}''')
         self.db_connection.commit()
 
     def get_user_state_by_chat_id(self: Database, chat_id: int) -> int:
-        return self.db_cursor.execute(f'''SELECT state
-                                                FROM User
-                                                WHERE chat_id={chat_id}''').fetchone()[0]
+        self.db_cursor.execute(f'''SELECT state
+                                                FROM mechmatsupportbotuser
+                                                WHERE chat_id={chat_id}''')
+        return self.db_cursor.fetchone()[0]
 
     def get_user_delivery_by_chat_id(self: Database, chat_id: int) -> int:
-        return self.db_cursor.execute(f'''SELECT delivery
-                                                FROM User
-                                                WHERE chat_id={chat_id}''').fetchone()[0]
-
-    def get_delivery_chat_id_list(self: Database) -> list[int]:
-        # better use iterator
-        return [elem[0] for elem in self.db_cursor.execute(f'''SELECT chat_id
-                                    FROM User;
-                               ''').fetchall()] # using list comprehension to form list of values instead of list of tuples
+        self.db_cursor.execute(f'''SELECT delivery
+                                                FROM mechmatsupportbotuser
+                                                WHERE chat_id={chat_id}''')
+        return self.db_cursor.fetchone()[0]
     
     # ADMINISTRATION
     
     def add_admin_by_chat_id(self: Database, chat_id: int) -> None:
-        self.db_cursor.execute(f'''INSERT INTO Admin(chat_id, state, is_superadmin)
+        self.db_cursor.execute(f'''INSERT INTO admin(chat_id, state, is_superadmin)
                                     VALUES
-                                    ({chat_id}, 0, 0)
-                                    ON CONFLICT(chat_id) DO UPDATE
-                                     SET state=0, is_superadmin=0
-                                     WHERE chat_id={chat_id};''')
+                                    ({chat_id}, 0, FALSE);''')
         self.db_connection.commit()
     
     def set_admin_state_by_chat_id(self: Database, chat_id: int, state: int) -> None:
-        self.db_cursor.execute(f'''UPDATE Admin
+        self.db_cursor.execute(f'''UPDATE admin
                                     SET state={state}
                                     WHERE chat_id={chat_id}''')
         self.db_connection.commit()
 
     def set_superadmin_by_chat_id(self: Database, chat_id: int, is_superadmin: int) -> None:
-        self.db_cursor.execute(f'''UPDATE Admin
+        self.db_cursor.execute(f'''UPDATE admin
                                     SET is_superadmin={is_superadmin}
                                     WHERE chat_id={chat_id}''')
         self.db_connection.commit()
 
     def get_admin_state_by_chat_id(self: Database, chat_id: int) -> int:
-        return self.db_cursor.execute(f'''SELECT state
-                                                FROM Admin
-                                                WHERE chat_id={chat_id}''').fetchone()[0]
+        self.db_cursor.execute(f'''SELECT state
+                                                FROM admin
+                                                WHERE chat_id={chat_id}''')
+        return self.db_cursor.fetchall()[0][0]
     
     def is_admin_by_chat_id(self: Database, chat_id: int) -> bool:
-        return (len(self.db_cursor.execute(f'''SELECT *
-                                            FROM Admin
+        self.db_cursor.execute(f'''SELECT *
+                                            FROM admin
                                             WHERE chat_id={chat_id};
-                                            ''').fetchall()) > 0)
+                                            ''')
+        return (len(self.db_cursor.fetchall()) > 0)
     
     def is_superadmin_by_chat_id(self: Database, chat_id: int) -> bool:
-        return (len(self.db_cursor.execute(f'''SELECT *
-                                            FROM Admin
+        self.db_cursor.execute(f'''SELECT *
+                                            FROM admin
                                             WHERE chat_id={chat_id} AND is_superadmin=1;
-                                            ''').fetchall()) > 0)
+                                            ''')
+        return (len(self.db_cursor.fetchall()) > 0)
     
     def create_one_time_password(self: Database, chat_id: int, password: str) -> None:
-        self.db_cursor.execute(f'''INSERT INTO OneTimePassword(admin_chat_id, password)
+        self.db_cursor.execute(f'''INSERT INTO onetimepassword(admin_chat_id, password)
                                     VALUES
                                     ({chat_id}, "{password}");''')
         self.db_connection.commit()
 
     def delete_one_time_password(self: Database, password: str) -> None:
-        self.db_cursor.execute(f'''DELETE FROM OneTimePassword
+        self.db_cursor.execute(f'''DELETE FROM onetimepassword
                                     WHERE
                                     password="{password}";''')
         self.db_connection.commit()
 
     def is_one_time_password(self: Database, password: str) -> bool:
-        return (len(self.db_cursor.execute(f'''SELECT *
-                                            FROM OneTimePassword
+        self.db_cursor.execute(f'''SELECT *
+                                            FROM onetimepassword
                                             WHERE password="{password}";
-                                            ''').fetchall()) > 0)
+                                            ''')
+        return (len(self.db_cursor.fetchall()) > 0)
 
 if __name__ == "__main__":
     db = Database()
