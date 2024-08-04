@@ -11,15 +11,24 @@ DB_HOST = os.getenv("DB_HOST");
 DB_USER = os.getenv("DB_USER");
 DB_PASSWORD = os.getenv("DB_PASSWORD");
 DB_PORT = os.getenv("DB_PORT");
-DATABASE_URL = os.getenv("DATABASE_URL");
+
 
 class Database:
     """
     Database to store bot users ID's in order to keep them updated with delivery
     """
-    def __init__(self: Database, db_url: str=DATABASE_URL) -> None:
-        self.db_url = db_url
-        self.db_connection = psycopg2.connect(db_url, sslmode='require')
+    def __init__(self: Database, db_name: str=DB_NAME, db_host=DB_HOST, db_user=DB_USER, db_password=DB_PASSWORD, db_port=DB_PORT) -> None:
+        self.db_name = db_name
+        self.db_host = db_host
+        self.db_user = db_user
+        self.db_password = db_password
+        self.db_port = db_port
+
+        self.db_connection = psycopg2.connect(database=self.db_name,
+                                                host=self.db_host,
+                                                user=self.db_user,
+                                                password=self.db_password,
+                                                port=self.db_port)
         self.db_cursor = self.db_connection.cursor()
         # creating tables in database if they are not existent
         self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS mechmatsupportbotuser(
@@ -35,6 +44,13 @@ class Database:
         self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS onetimepassword(
                                     admin_chat_id INT,
                                     password TEXT
+                               );''')
+        self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS feedbackmessage(
+                                    number INT PRIMARY KEY,
+                                    chat_id INT,
+                                    content TEXT,
+                                    state INT,   -- 0 - unanswered, 1 - answered, 2 - closed
+                                    admin_to_close_chat_id INT  -- -1 ~ no admin
                                );''')
         self.db_connection.commit()
 
@@ -120,21 +136,37 @@ class Database:
     def create_one_time_password(self: Database, chat_id: int, password: str) -> None:
         self.db_cursor.execute(f'''INSERT INTO onetimepassword(admin_chat_id, password)
                                     VALUES
-                                    ({chat_id}, "{password}");''')
+                                    ({chat_id}, '{password}');''')
         self.db_connection.commit()
 
     def delete_one_time_password(self: Database, password: str) -> None:
         self.db_cursor.execute(f'''DELETE FROM onetimepassword
                                     WHERE
-                                    password="{password}";''')
+                                    password='{password}';''')
         self.db_connection.commit()
 
     def is_one_time_password(self: Database, password: str) -> bool:
         self.db_cursor.execute(f'''SELECT *
                                             FROM onetimepassword
-                                            WHERE password="{password}";
+                                            WHERE password='{password}';
                                             ''')
         return (len(self.db_cursor.fetchall()) > 0)
+    
+    # FEEDBACK
+
+    def add_feedback_message_by_chat_id(self: Database, chat_id: int, content: int):
+        # get number of rows
+        self.db_cursor.execute(f'''SELECT
+                                    COUNT (*)
+                                    FROM
+                                    feedbackmessage
+                                    ''')
+        number_of_rows = self.db_cursor.fetchone()[0]
+        print(number_of_rows)
+        self.db_cursor.execute(f'''INSERT INTO feedbackmessage(number, chat_id, content, state, admin_to_close_chat_id)
+                                    VALUES
+                                    ({number_of_rows}, {chat_id}, '{content}', 0, -1);''')
+        self.db_connection.commit()
 
 if __name__ == "__main__":
     db = Database()
