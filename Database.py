@@ -118,7 +118,7 @@ class Database:
                                                 FROM admin
                                                 WHERE chat_id={chat_id}''')
         fetch_result = self.db_cursor.fetchone()
-        return fetch_result[0][0] if fetch_result is not None else 0
+        return fetch_result[0] if fetch_result is not None else 0
     
     def is_admin_by_chat_id(self: Database, chat_id: int) -> bool:
         self.db_cursor.execute(f'''SELECT *
