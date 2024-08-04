@@ -66,7 +66,6 @@ def callback_query(call):
                             FROM feedbackmessage;''')
         # iterate by db_cursor
         fetch_result = db.db_cursor.fetchone()
-        print(fetch_result)
         while (fetch_result is not None):
             bot.send_message(call.message.chat.id, f"""Повідомлення #{fetch_result[0]}
 
@@ -96,6 +95,36 @@ def start_message(message):
     else:
         bot.reply_to(message,
                      f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Вам треба авторизуватися для адміністрування.")
+        
+@bot.message_handler(commands=['answer'])
+def answer_to_feedback(message):
+    if (db.is_admin_by_chat_id(message.chat.id)):
+        # getting feedback number
+        number = message.text.split()[1]
+        # getting answer
+        message_content = message.text
+        first_quote_index = message_content.index("\"") + 1
+        message_content = message_content[::-1]
+        last_quote_index = len(message_content) - message_content.index("\"") - 1
+        feedback_content = message.text[first_quote_index:last_quote_index]
+
+        # fetching data from db
+        db.db_cursor.execute(f"""SELECT *
+                            FROM feedbackmessage
+                            WHERE number={number};""")
+        fetch_result = db.db_cursor.fetchone()
+        if (fetch_result is not None):
+            bot_sender.send_message(fetch_result[1], f"""Відповідь від технічної підтримки на повідомлення з номером #{number}:
+                                    
+"{feedback_content}" """, reply_markup=get_back_markup())
+            bot.reply_to(message, f"Відповідь на повідомлення #{number}:\n{feedback_content}\n\nвідправлено.",
+                        reply_markup=get_authorized_markup())
+        else:
+            bot.reply_to(message, f"Сталася помилка: такого номеру повідомлення не існує",
+                        reply_markup=get_authorized_markup())
+    else:
+        bot.reply_to(message,
+                     f"Вам треба авторизуватися для адміністрування")
         
 @bot.message_handler(commands=['create_one_time_password'])
 def create_one_time_password_message(message):
