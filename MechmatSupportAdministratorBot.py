@@ -20,14 +20,11 @@ db = Database()
 
 def get_authorized_markup():
     keyboard = [
-        [telebot.types.InlineKeyboardButton("Відправити розсилку", callback_data="Відправити розсилку")]
+        [telebot.types.InlineKeyboardButton("Відправити розсилку", callback_data="Відправити розсилку")],
+        [telebot.types.InlineKeyboardButton("Активний зворотній зв'язок", callback_data="Активний зворотній зв'язок")],
+        [telebot.types.InlineKeyboardButton("Увесь зворотній зв'язок", callback_data="Увесь зворотній зв'язок")]
     ]
     markup = telebot.types.InlineKeyboardMarkup(keyboard)
-    return markup
-
-def get_unauthorized_markup():
-    markup = telebot.types.ReplyKeyboardMarkup()
-    markup.add(telebot.types.KeyboardButton("Авторизуватись"))
     return markup
 
 def get_back_markup():
@@ -45,9 +42,45 @@ def callback_query(call):
         return None
     elif (call.data == "Відправити розсилку"):
         db.set_admin_state_by_chat_id(call.message.chat.id, 1)
-        bot.send_message(call.message.chat.id, """Відправте текст розсилки наступним повідомленням.
-Увага! Після того, як ви відправите текст, його не можна буде видалити.""")
+        bot.send_message(call.message.chat.id, info.admin_delivery_text)
+
+    elif (call.data == "Активний зворотній зв'язок"):
+        db.db_cursor.execute(f'''SELECT *
+                            FROM feedbackmessage
+                            WHERE state=0;''')
+        # iterate by db_cursor
+        fetch_result = db.db_cursor.fetchone()
+        print(fetch_result)
+        while (fetch_result is not None):
+            bot.send_message(call.message.chat.id, f"""Повідомлення #{fetch_result[0]}
+
+"{fetch_result[2]}"
+
+Статус: {status_to_str(fetch_result[3])}
+
+Адміністратор, що надав відповідь: {answered_by(fetch_result[4])}""")
+            fetch_result = db.db_cursor.fetchone()
+        
+    elif (call.data == "Увесь зворотній зв'язок"):
+        db.db_cursor.execute(f'''SELECT *
+                            FROM feedbackmessage;''')
+        # iterate by db_cursor
+        fetch_result = db.db_cursor.fetchone()
+        print(fetch_result)
+        while (fetch_result is not None):
+            bot.send_message(call.message.chat.id, f"""Повідомлення #{fetch_result[0]}
+
+"{fetch_result[2]}"
+
+Статус: {status_to_str(fetch_result[3])}
+
+Адміністратор, що надав відповідь: {answered_by(fetch_result[4])}""")
+            fetch_result = db.db_cursor.fetchone()
+        
+    # BACK
+
     elif (call.data == info.main_page_button_text):
+        db.set_admin_state_by_chat_id(call.message.chat.id, 0)
         bot.send_message(call.message.chat.id,
                      f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Ви авторизовані для адміністрування.",
                     reply_markup=get_authorized_markup())
@@ -62,8 +95,7 @@ def start_message(message):
                     reply_markup=get_authorized_markup())
     else:
         bot.reply_to(message,
-                     f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Вам треба авторизуватися для адміністрування.",
-                    reply_markup=get_unauthorized_markup())
+                     f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Вам треба авторизуватися для адміністрування.")
         
 @bot.message_handler(commands=['create_one_time_password'])
 def create_one_time_password_message(message):
@@ -74,8 +106,7 @@ def create_one_time_password_message(message):
                     reply_markup=get_authorized_markup())
     else:
         bot.reply_to(message,
-                     f"Вам треба авторизуватися для адміністрування",
-                    reply_markup=get_unauthorized_markup())
+                     f"Вам треба авторизуватися для адміністрування")
         
 
 @bot.message_handler(commands=['password'])
@@ -92,13 +123,11 @@ def password_message(message):
                      reply_markup=get_authorized_markup())
     else:
         bot.reply_to(message,
-                     f"Вам треба авторизуватися для адміністрування",
-                    reply_markup=get_unauthorized_markup())
+                     f"Вам треба авторизуватися для адміністрування")
     
 @bot.message_handler(func=lambda message: True)
 def universal_message(message):
     #try:
-    print(f"message from: {message.chat.id}, is_admin: {db.is_admin_by_chat_id(message.chat.id)}, admin_state: {db.get_admin_state_by_chat_id(message.chat.id)}")
     if (db.is_admin_by_chat_id(message.chat.id) and db.get_admin_state_by_chat_id(message.chat.id) == 0):
         bot.send_message(message.chat.id, f"Я не зрозумів команду. Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Ви авторизовані для адміністрування.",
                        reply_markup=get_authorized_markup())
@@ -108,7 +137,7 @@ def universal_message(message):
         bot.send_message(message.chat.id, f"Розсилку відправлено!",
                          reply_markup=get_authorized_markup())
     else:
-        bot.send_message(message.chat.id, "Я не зрозумів команду. Вам треба авторизуватися для адміністрування", reply_markup=get_unauthorized_markup())
+        bot.send_message(message.chat.id, "Я не зрозумів команду. Вам треба авторизуватися для адміністрування")
     #except Exception as ex:
      #   logging.critical(f"{ex} happened...")
 
@@ -120,6 +149,13 @@ def send_delivery_for_all_users(message):
                             WHERE delivery=TRUE;''')
     for chat_id in db.db_cursor:
         bot_sender.send_message(chat_id[0], message)
+
+def status_to_str(n: int) -> str:
+    status_list = ["Активний", "Відповідь надано", "Закритий"]
+    return status_list[n]
+
+def answered_by(chat_id: int) -> str:
+    return "Відповідь не надана" if chat_id == -1 else chat_id
 
 def main():
     bot.infinity_polling()
