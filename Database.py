@@ -117,7 +117,8 @@ class Database:
         self.db_cursor.execute(f'''SELECT state
                                                 FROM admin
                                                 WHERE chat_id={chat_id}''')
-        return self.db_cursor.fetchall()[0][0]
+        fetch_result = self.db_cursor.fetchone()
+        return fetch_result[0][0] if fetch_result is not None else 0
     
     def is_admin_by_chat_id(self: Database, chat_id: int) -> bool:
         self.db_cursor.execute(f'''SELECT *
@@ -154,7 +155,7 @@ class Database:
     
     # FEEDBACK
 
-    def add_feedback_message_by_chat_id(self: Database, chat_id: int, content: int):
+    def add_feedback_message_by_chat_id(self: Database, chat_id: int, content: str) -> int:
         # get number of rows
         self.db_cursor.execute(f'''SELECT
                                     COUNT (*)
@@ -162,11 +163,11 @@ class Database:
                                     feedbackmessage
                                     ''')
         number_of_rows = self.db_cursor.fetchone()[0]
-        print(number_of_rows)
         self.db_cursor.execute(f'''INSERT INTO feedbackmessage(number, chat_id, content, state, admin_to_close_chat_id)
                                     VALUES
                                     ({number_of_rows}, {chat_id}, '{content}', 0, -1);''')
         self.db_connection.commit()
+        return number_of_rows
 
 if __name__ == "__main__":
     db = Database()
