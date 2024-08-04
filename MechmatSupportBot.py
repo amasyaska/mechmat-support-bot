@@ -28,7 +28,8 @@ def get_start_markup():
         [telebot.types.InlineKeyboardButton("Інше 🦝", callback_data="Інше")],
         [telebot.types.InlineKeyboardButton("Корисні посилання", callback_data="Корисні посилання")],
         [telebot.types.InlineKeyboardButton("Підписатися на розсилку 📬", callback_data="Підписатися на розсилку")],
-        [telebot.types.InlineKeyboardButton("Показати мєм 🐧", callback_data="Показати мєм")]
+        [telebot.types.InlineKeyboardButton("Показати мєм 🐧", callback_data="Показати мєм")],
+        [telebot.types.InlineKeyboardButton("Зворотній зв'язок 💬", callback_data="Зворотній зв'язок")]
     ]
     markup = telebot.types.InlineKeyboardMarkup(keyboard)
     return markup
@@ -54,7 +55,10 @@ def callback_query(call):
         bot.send_message(call.message.chat.id, info.tg_channel_sixy_prime_html, parse_mode="HTML", reply_markup=get_back_markup())
     elif (call.data == "Підписатися на розсилку"):
         db.set_user_delivery_by_chat_id(call.message.chat.id, True)
-        bot.send_message(call.message.chat.id, "Ви підписані на розсилку, перевірити статус: /check_delivery")
+        bot.send_message(call.message.chat.id, "Ви підписані на розсилку, перевірити статус: /check_delivery", reply_markup=get_back_markup())
+    elif (call.data == "Зворотній зв'язок"):
+        bot.send_message(call.message.chat.id, info.feedback_message, reply_markup=get_back_markup())
+        db.set_user_state_by_chat_id(call.message.chat.id, 10)
 
     # Абітурієнту
     elif (call.data == "Дати приймальної комісії"):
@@ -103,6 +107,28 @@ def callback_query(call):
         bot.send_message(call.message.chat.id,
                  f"Привіт! Це бот-помічник з механіко-математичного факультету КНУ {random_emojis_list[random.randint(0, len(random_emojis_list) - 1)]}. Тут ти можеш поставити питання або запропонувати ідею для покращення роботи факультету.",
                  reply_markup=get_start_markup())
+        db.set_user_state_by_chat_id(call.message.chat.id, 0)
+    
+    # FEEDBACK
+
+    elif (call.data == info.yes and db.get_user_state_by_chat_id(call.message.chat.id) == 10):
+        # getting text into first and last quote
+        message_content = call.message.text
+        first_quote_index = message_content.index("\"") + 1
+        message_content = message_content[::-1]
+        last_quote_index = len(message_content) - message_content.index("\"") - 1
+        feedback_content = call.message.text[first_quote_index:last_quote_index]
+        #
+        number = db.add_feedback_message_by_chat_id(call.message.chat.id, feedback_content)
+        bot.send_message(call.message.chat.id, f"Дякуємо! Ваше повідомлення з номером #{number} було відправлено.", reply_markup=get_back_markup())
+        db.set_user_state_by_chat_id(call.message.chat.id, 0)
+
+    elif (call.data == info.no and db.get_user_state_by_chat_id(call.message.chat.id) == 10):
+        bot.send_message(call.message.chat.id, f"Відправку повідомлення було скасовано.", reply_markup=get_back_markup())
+        db.set_user_state_by_chat_id(call.message.chat.id, 0)
+        
+    # IN DEVELOPMENT
+
     else:
         bot.send_message(call.message.chat.id,
                  f"Цей розділ в розробці 🙁.",
@@ -204,6 +230,15 @@ def get_back_markup():
     markup = telebot.types.InlineKeyboardMarkup(keyboard)
     return markup
 
+def get_feedback_markup():
+    keyboard = [
+        [telebot.types.InlineKeyboardButton(info.yes, callback_data=info.yes),
+         telebot.types.InlineKeyboardButton(info.no, callback_data=info.no)],
+        [telebot.types.InlineKeyboardButton(info.main_page_button_text, callback_data=info.main_page_button_text)]
+    ]
+    markup = telebot.types.InlineKeyboardMarkup(keyboard)
+    return markup
+
 @bot.message_handler(commands=['check_delivery'])
 def start_message(message):
     if (not db.is_user_exists_by_chat_id(message.chat.id)):
@@ -235,7 +270,10 @@ def universal_message(message):
     if (not db.is_user_exists_by_chat_id(message.chat.id)):
         db.add_user_by_chat_id(message.chat.id)
     try:
-        bot.send_message(message.chat.id, "Я не зрозумів Вас. Введіть /start для початку роботи.", reply_markup=get_back_markup())
+        if (db.get_user_state_by_chat_id(message.chat.id) == 10):
+            bot.send_message(message.chat.id, f"""Ваша проблема:\n"{message.text}"\n\nВідправити?""", reply_markup=get_feedback_markup())
+        else:
+            bot.send_message(message.chat.id, "Я не зрозумів Вас. Введіть /start для початку роботи.", reply_markup=get_back_markup())
     except Exception as ex:
         logging.critical(f"{ex} happened...")
 
