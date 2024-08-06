@@ -47,10 +47,15 @@ class Database:
                                );''')
         self.db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS feedbackmessage(
                                     number INT PRIMARY KEY,
-                                    chat_id INT,
+                                    chat_id BIGINT,
+                                    user_id BIGINT,
+                                    username TEXT,
                                     content TEXT,
-                                    state INT,   -- 0 - unanswered, 1 - answered, 2 - closed
-                                    admin_to_close_chat_id INT  -- -1 ~ no admin
+                                    state INT,                          -- 0 - unanswered, 1 - answered, 2 - closed
+                                    admin_to_close_chat_id BIGINT,      -- -1 ~ no admin
+                                    admin_to_close_user_id BIGINT,      -- -1 ~ no admin
+                                    admin_to_close_username TEXT,       -- -1 ~ no admin
+                                    admin_reponse TEXT                  -- -1 ~ no admin
                                );''')
         self.db_connection.commit()
 
@@ -155,7 +160,7 @@ class Database:
     
     # FEEDBACK
 
-    def add_feedback_message_by_chat_id(self: Database, chat_id: int, content: str) -> int:
+    def add_feedback_message_by_chat_id_user_id_username(self: Database, chat_id: int, user_id: int, username: str, content: str) -> int:
         # get number of rows
         self.db_cursor.execute(f'''SELECT
                                     COUNT (*)
@@ -163,11 +168,31 @@ class Database:
                                     feedbackmessage
                                     ''')
         number_of_rows = self.db_cursor.fetchone()[0]
-        self.db_cursor.execute(f'''INSERT INTO feedbackmessage(number, chat_id, content, state, admin_to_close_chat_id)
+        self.db_cursor.execute(f'''INSERT INTO feedbackmessage(number, chat_id, user_id, username, content, state, admin_to_close_chat_id, admin_to_close_user_id, admin_to_close_username, admin_reponse)
                                     VALUES
-                                    ({number_of_rows}, {chat_id}, '{content}', 0, -1);''')
+                                    ({number_of_rows}, {chat_id}, {user_id}, '{username}', '{content.replace("'", "`")}', 0, -1, -1, '-1', '-1');''')
         self.db_connection.commit()
         return number_of_rows
+    
+    def set_feedback_message_state_by_number(self: Database, number: int, state: int) -> None:
+        self.db_cursor.execute(f'''UPDATE feedbackmessage
+                                    SET state={state}
+                                    WHERE number={number}''')
+        self.db_connection.commit()
+
+    def set_feedback_message_admin_to_close_by_number(self: Database,
+                                                      number: int,
+                                                      admin_to_close_chat_id: int,
+                                                      admin_to_close_user_id: int,
+                                                      admin_to_close_username: str,
+                                                      admin_reponse: str) -> None:
+        self.db_cursor.execute(f'''UPDATE feedbackmessage
+                                    SET admin_to_close_chat_id={admin_to_close_chat_id},
+                                        admin_to_close_user_id={admin_to_close_user_id},
+                                        admin_to_close_username='{admin_to_close_username}',
+                                        admin_reponse='{admin_reponse.replace("'", "`")}'
+                                    WHERE number={number}''')
+        self.db_connection.commit()
 
 if __name__ == "__main__":
     db = Database()
