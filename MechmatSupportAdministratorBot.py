@@ -42,7 +42,7 @@ def callback_query(call):
         return None
     elif (call.data == "Відправити розсилку"):
         db.set_admin_state_by_chat_id(call.message.chat.id, 1)
-        bot.send_message(call.message.chat.id, info.admin_delivery_text)
+        bot.send_message(call.message.chat.id, info.admin_delivery_text, reply_markup=get_back_markup())
 
     elif (call.data == "Активний зворотній зв'язок"):
         db.db_cursor.execute(f'''SELECT *
@@ -50,16 +50,26 @@ def callback_query(call):
                             WHERE state=0;''')
         # iterate by db_cursor
         fetch_result = db.db_cursor.fetchone()
-        print(fetch_result)
         while (fetch_result is not None):
             bot.send_message(call.message.chat.id, f"""Повідомлення #{fetch_result[0]}
 
-"{fetch_result[2]}"
+"{fetch_result[4]}"
 
-Статус: {status_to_str(fetch_result[3])}
+(Станом на відправку) username: @{fetch_result[3]}
 
-Адміністратор, що надав відповідь: {answered_by(fetch_result[4])}""")
+user id: {fetch_result[2]}
+
+Статус: {status_to_str(fetch_result[5])}
+
+Адміністратор, що надав відповідь: @{answered_by(fetch_result[8])}
+
+user id адміністратора: {answered_by(fetch_result[7])}
+
+Відповідь адміністратора: {answered_by(fetch_result[9])}""")
             fetch_result = db.db_cursor.fetchone()
+        bot.send_message(call.message.chat.id,
+                     f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Ви авторизовані для адміністрування.",
+                    reply_markup=get_authorized_markup())
         
     elif (call.data == "Увесь зворотній зв'язок"):
         db.db_cursor.execute(f'''SELECT *
@@ -69,12 +79,23 @@ def callback_query(call):
         while (fetch_result is not None):
             bot.send_message(call.message.chat.id, f"""Повідомлення #{fetch_result[0]}
 
-"{fetch_result[2]}"
+"{fetch_result[4]}"
 
-Статус: {status_to_str(fetch_result[3])}
+(Станом на відправку) username: @{fetch_result[3]}
 
-Адміністратор, що надав відповідь: {answered_by(fetch_result[4])}""")
+user id: {fetch_result[2]}
+
+Статус: {status_to_str(fetch_result[5])}
+
+Адміністратор, що надав відповідь: @{answered_by(fetch_result[8])}
+
+user id адміністратора: {answered_by(fetch_result[7])}
+
+Відповідь адміністратора: {answered_by(fetch_result[9])}""")
             fetch_result = db.db_cursor.fetchone()
+        bot.send_message(call.message.chat.id,
+                     f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Ви авторизовані для адміністрування.",
+                    reply_markup=get_authorized_markup())
         
     # BACK
 
@@ -96,7 +117,7 @@ def start_message(message):
         bot.reply_to(message,
                      f"Привіт! Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Вам треба авторизуватися для адміністрування.")
         
-@bot.message_handler(commands=['answer'])
+@bot.message_handler(commands=['response'])
 def answer_to_feedback(message):
     if (db.is_admin_by_chat_id(message.chat.id)):
         # getting feedback number
@@ -114,6 +135,12 @@ def answer_to_feedback(message):
                             WHERE number={number};""")
         fetch_result = db.db_cursor.fetchone()
         if (fetch_result is not None):
+            db.set_feedback_message_state_by_number(number, 2)
+            db.set_feedback_message_admin_to_close_by_number(number,
+                                                             message.chat.id,
+                                                             message.from_user.id,
+                                                             message.from_user.username,
+                                                             feedback_content)
             bot_sender.send_message(fetch_result[1], f"""Відповідь від технічної підтримки на повідомлення з номером #{number}:
                                     
 "{feedback_content}" """, reply_markup=get_back_markup())
@@ -184,7 +211,7 @@ def status_to_str(n: int) -> str:
     return status_list[n]
 
 def answered_by(chat_id: int) -> str:
-    return "Відповідь не надана" if chat_id == -1 else chat_id
+    return "Відповідь не надана" if (chat_id == -1 or chat_id == "-1") else chat_id
 
 def main():
     bot.infinity_polling()
