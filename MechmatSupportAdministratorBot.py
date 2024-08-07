@@ -190,6 +190,7 @@ def password_message(message):
     
 @bot.message_handler(func=lambda message: True)
 def universal_message(message):
+    print(f"chat_id: {message.chat.id}")
     #try:
     if (db.is_admin_by_chat_id(message.chat.id) and db.get_admin_state_by_chat_id(message.chat.id) == 0):
         bot.send_message(message.chat.id, f"Я не зрозумів команду. Це бот для адміністрування бота-помічника @mechmatsupport_test_bot. Ви авторизовані для адміністрування.",
