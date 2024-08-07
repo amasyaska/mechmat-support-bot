@@ -119,7 +119,7 @@ def callback_query(call):
         last_quote_index = len(message_content) - message_content.index("\"") - 1
         feedback_content = call.message.text[first_quote_index:last_quote_index]
         #
-        number = db.add_feedback_message_by_chat_id(call.message.chat.id, feedback_content)
+        number = db.add_feedback_message_by_chat_id_user_id_username(call.message.chat.id, call.from_user.id, call.from_user.username, feedback_content)
         bot.send_message(call.message.chat.id, f"Дякуємо! Ваше повідомлення з номером #{number} було відправлено.", reply_markup=get_back_markup())
         db.set_user_state_by_chat_id(call.message.chat.id, 0)
 
