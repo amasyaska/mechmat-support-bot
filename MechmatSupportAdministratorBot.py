@@ -16,6 +16,13 @@ ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")
 bot = telebot.TeleBot(ADMIN_API_KEY)
 db = Database()
 
+# SET SUPERADMIN FROM ENV
+SUPERADMIN_CHAT_ID = os.getenv("SUPERADMIN_CHAT_ID")
+if (SUPERADMIN_CHAT_ID != ""):
+    db.add_admin_by_chat_id(SUPERADMIN_CHAT_ID)
+    db.set_superadmin_by_chat_id(SUPERADMIN_CHAT_ID, 1)
+#
+
 # MARKUPS
 
 def get_authorized_markup():
